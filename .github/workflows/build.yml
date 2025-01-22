@@ -35,7 +35,14 @@ jobs:
         run: nuget restore UAssetGUI.sln
 
       - name: Build
-        run: msbuild UAssetGUI.sln /p:Configuration=Release
+        run: |
+          msbuild UAssetGUI.sln /p:Configuration=Release /p:Platform=AnyCPU /p:PublishSingleFile=true
+
+      - name: Get Version
+        id: get_version
+        run: |
+          $version = Select-Xml -Path "UAssetGUI/UAssetGUI.csproj" -XPath "//PropertyGroup/Version/text()" | Select-Object -ExpandProperty Node | Select-Object -ExpandProperty Value
+          echo "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Create Release
         id: create_release
@@ -43,8 +50,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ github.run_number }}
-          release_name: Release v${{ github.run_number }}
+          tag_name: v${{ steps.get_version.outputs.version }}
+          release_name: Release v${{ steps.get_version.outputs.version }}
           draft: false
           prerelease: false
 
@@ -54,6 +61,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./bin/Release/UAssetGUI.exe
+          asset_path: ./UAssetGUI/bin/Release/net8.0-windows/UAssetGUI.exe
           asset_name: UAssetGUI.exe
           asset_content_type: application/octet-stream
