@@ -3,39 +3,57 @@ on:
   push:
     branches:
       - master
-
 jobs:
   build:
     runs-on: windows-latest
-    
     env:
       ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
-    - name: .NET Setup
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: '8.0.x'
+      - name: .NET Setup
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '8.0.x'
 
-    - name: Fetch submodules
-      run: git submodule update --init --recursive
+      - name: Fetch submodules
+        run: git submodule update --init --recursive
 
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1.1
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1.1
 
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.2
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.0.2
 
-    - name: Navigate to workspace
-      run: cd $GITHUB_WORKSPACE
+      - name: Navigate to workspace
+        run: cd $GITHUB_WORKSPACE
 
-    - name: Restore packages
-      run: nuget restore UAssetGUI.sln
+      - name: Restore packages
+        run: nuget restore UAssetGUI.sln
 
-    - name: Build
-      run: msbuild UAssetGUI.sln /p:Configuration=Release
+      - name: Build
+        run: msbuild UAssetGUI.sln /p:Configuration=Release
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Release v${{ github.run_number }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bin/Release/UAssetGUI.exe
+          asset_name: UAssetGUI.exe
+          asset_content_type: application/octet-stream
