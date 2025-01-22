@@ -35,14 +35,7 @@ jobs:
         run: nuget restore UAssetGUI.sln
 
       - name: Build
-        run: |
-          msbuild UAssetGUI.sln /p:Configuration=Release /p:Platform=AnyCPU /p:PublishSingleFile=true
-
-      - name: Get Version
-        id: get_version
-        run: |
-          $version = Select-Xml -Path "UAssetGUI/UAssetGUI.csproj" -XPath "//PropertyGroup/Version/text()" | Select-Object -ExpandProperty Node | Select-Object -ExpandProperty Value
-          echo "version=$version" >> $env:GITHUB_OUTPUT
+        run: msbuild UAssetGUI.sln /p:Configuration=Release
 
       - name: Create Release
         id: create_release
@@ -50,8 +43,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.get_version.outputs.version }}
-          release_name: Release v${{ steps.get_version.outputs.version }}
+          tag_name: v${{ github.run_number }}
+          release_name: Release v${{ github.run_number }}
           draft: false
           prerelease: false
 
